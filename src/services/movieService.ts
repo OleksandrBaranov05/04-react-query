@@ -10,14 +10,11 @@ if (!token) {
 export const api = axios.create({
   baseURL: "https://api.themoviedb.org/3",
   headers: {
-    Authorization: `Bearer ${token}`, // v4 Bearer token
+    Authorization: `Bearer ${token}`,
     "Content-Type": "application/json;charset=utf-8",
   },
 });
 
-/**
- * Пошук фільмів за ключовим словом з пагінацією.
- */
 export async function fetchMovies(
   query: string,
   page: number
@@ -35,7 +32,6 @@ export async function fetchMovies(
   return resp.data;
 }
 
-/** Хелпер для побудови url зображення */
 export function buildImg(path: string | null | undefined, size: "w500" | "original" = "w500") {
   if (!path) return "";
   const base = "https://image.tmdb.org/t/p/";

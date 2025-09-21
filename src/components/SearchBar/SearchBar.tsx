@@ -27,7 +27,7 @@ export default function SearchBar({ onSubmit }: SearchBarProps) {
           Powered by TMDB
         </a>
 
-        {/* Form Actions (через атрибут action у <form>) */}
+        {}
         <form
           className={css.form}
           action={async (formData) => {

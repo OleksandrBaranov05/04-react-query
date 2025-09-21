@@ -1,4 +1,3 @@
-// src/components/App/App.tsx
 import { useState, useEffect } from "react";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import ReactPaginate from "react-paginate";
@@ -51,7 +50,7 @@ export default function App() {
 
         {!isError && !isFetching && isSuccess && data?.results.length > 0 && (
           <>
-            {/* ПАГІНАЦІЯ ЗВЕРХУ */}
+            {}
             {totalPages > 1 && (
               <ReactPaginate
                 pageCount={totalPages}
@@ -59,8 +58,6 @@ export default function App() {
                 marginPagesDisplayed={1}
                 onPageChange={({ selected }) => {
                   setPage(selected + 1);
-                  // опційно: прокрутити до верху списку
-                  // window.scrollTo({ top: 0, behavior: "smooth" });
                 }}
                 forcePage={page - 1}
                 containerClassName={css.pagination}
