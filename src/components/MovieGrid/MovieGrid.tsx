@@ -1,26 +1,36 @@
-import css from "./MovieGrid.module.css"
+import type { MouseEvent } from "react";
 import type { Movie } from "../../types/movie";
-import {getImageUrl} from "../../utils/getImageUrl.ts"
+import { buildImg } from "../../services/movieService";
+import css from "./MovieGrid.module.css";
 
-interface MovieGridProps {
-    onSelect: (movie: Movie) => void;
-    movies: Movie[]
+export interface MovieGridProps {
+  movies: Movie[];
+  onSelect: (movie: Movie) => void;
 }
 
 export default function MovieGrid({ movies, onSelect }: MovieGridProps) {
-    return <ul className={css.grid}>
-        {movies.map((movie) => (
-            <li key={movie.id} onClick={() => onSelect(movie)} >
-                <div className={css.card}>
-                    <img
-                        className={css.image}
-                        src={getImageUrl(movie.poster_path)}
-                        alt={movie.title}
-                        loading="lazy"
-                    />
-                    <h2 className={css.title}>{movie.title}</h2>
-                </div>
-            </li>
-            ))}
+  if (!movies.length) return null;
+
+  const handleClick = (e: MouseEvent, m: Movie) => {
+    e.preventDefault();
+    onSelect(m);
+  };
+
+  return (
+    <ul className={css.grid}>
+      {movies.map((m) => (
+        <li key={m.id}>
+          <div className={css.card} onClick={(e) => handleClick(e, m)}>
+            <img
+              className={css.image}
+              src={buildImg(m.poster_path, "w500") || ""}
+              alt={m.title}
+              loading="lazy"
+            />
+            <h2 className={css.title}>{m.title}</h2>
+          </div>
+        </li>
+      ))}
     </ul>
+  );
 }

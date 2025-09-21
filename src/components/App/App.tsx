@@ -1,91 +1,81 @@
-import { useState } from 'react';
+// src/components/App/App.tsx
+import { useState, useEffect } from "react";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
-import ReactPaginate from 'react-paginate';
-import { searchMovies} from "../../services/tmdb";
-import type { TmdbMovie } from "../../services/tmdb";
-import css from './App.module.css';
+import ReactPaginate from "react-paginate";
+import toast from "react-hot-toast";
 
+import SearchBar from "../SearchBar/SearchBar";
+import MovieGrid from "../MovieGrid/MovieGrid";
+import Loader from "../Loader/Loader";
+import ErrorMessage from "../ErrorMessage/ErrorMessage";
+import MovieModal from "../MovieModal/MovieModal";
+
+import { fetchMovies } from "../../services/movieService";
+import type { Movie, TmdbSearchResponse } from "../../types/movie";
+import css from "./App.module.css";
 
 export default function App() {
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
+  const [selected, setSelected] = useState<Movie | null>(null);
 
-  const { data, isFetching, isError, error, isSuccess } = useQuery({
-  queryKey: ["movies", query, page],
-  queryFn: () => searchMovies(query, page),
-  enabled: query.trim().length > 0,
-  placeholderData: keepPreviousData, // ✅ аналогічна поведінка v4
-});          
-  
+  const { data, isFetching, isError, error, isSuccess } = useQuery<TmdbSearchResponse>({
+    queryKey: ["movies", query, page],
+    queryFn: () => fetchMovies(query, page),
+    enabled: query.trim().length > 0,
+    placeholderData: keepPreviousData,
+  });
+
+  useEffect(() => {
+    if (isSuccess && data && data.results.length === 0) {
+      toast("No movies found for your request.");
+    }
+  }, [isSuccess, data]);
 
   const totalPages = data?.total_pages ?? 0;
 
-  function onSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  const handleSearchSubmit = (value: string) => {
+    if (value === query) return;
+    setQuery(value);
     setPage(1);
-  }
+  };
 
   return (
-    <div style={{ maxWidth: 960, margin: '0 auto', padding: 16 }}>
-      <h1>Пошук фільмів</h1>
+    <>
+      <SearchBar onSubmit={handleSearchSubmit} />
 
-      <form onSubmit={onSubmit} style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Введіть назву фільму…"
-          style={{ flex: 1, padding: 8 }}
-        />
-        <button type="submit">Шукати</button>
-      </form>
+      <main className={css.container}>
+        {isError && <ErrorMessage message={(error as Error)?.message} />}
 
-      {isError && (
-        <p style={{ color: 'crimson' }}>
-          {(error as Error)?.message || 'Сталася помилка під час завантаження'}
-        </p>
-      )}
+        {!isError && isFetching && <Loader />}
 
-      {isFetching && <p>Завантаження…</p>}
+        {!isError && !isFetching && isSuccess && data?.results.length > 0 && (
+          <>
+            {/* ПАГІНАЦІЯ ЗВЕРХУ */}
+            {totalPages > 1 && (
+              <ReactPaginate
+                pageCount={totalPages}
+                pageRangeDisplayed={5}
+                marginPagesDisplayed={1}
+                onPageChange={({ selected }) => {
+                  setPage(selected + 1);
+                  // опційно: прокрутити до верху списку
+                  // window.scrollTo({ top: 0, behavior: "smooth" });
+                }}
+                forcePage={page - 1}
+                containerClassName={css.pagination}
+                activeClassName={css.active}
+                nextLabel="→"
+                previousLabel="←"
+              />
+            )}
 
-      {isSuccess && data.results.length === 0 && <p>Нічого не знайдено.</p>}
+            <MovieGrid movies={data.results} onSelect={(m) => setSelected(m)} />
+          </>
+        )}
+      </main>
 
-      {isSuccess && data.results.length > 0 && (
-        <>
-          <p style={{ opacity: 0.8, marginBottom: 8 }}>
-            Знайдено: <b>{data.total_results}</b>
-          </p>
-
-          <ul style={{ display: 'grid', gap: 12, listStyle: 'none', padding: 0 }}>
-            {data.results.map((m: TmdbMovie) => (
-              <li
-                key={m.id}
-                style={{ border: '1px solid #eee', padding: 12, borderRadius: 8 }}
-              >
-                <b>{m.title}</b>{' '}
-                {m.release_date ? `(${m.release_date.slice(0, 4)})` : ''}
-                <p style={{ margin: '8px 0 0 0' }}>
-                  {m.overview || 'Опис відсутній.'}
-                </p>
-              </li>
-            ))}
-          </ul>
-
-          {/* Пагінація тільки якщо сторінок > 1 */}
-          {totalPages > 1 && (
-            <ReactPaginate
-              pageCount={totalPages}
-              pageRangeDisplayed={5}
-              marginPagesDisplayed={1}
-              onPageChange={({ selected }) => setPage(selected + 1)}
-              forcePage={page - 1}
-              containerClassName={css.pagination}
-              activeClassName={css.active}
-              nextLabel="→"
-              previousLabel="←"
-            />
-          )}
-        </>
-      )}
-    </div>
+      {selected && <MovieModal movie={selected} onClose={() => setSelected(null)} />}
+    </>
   );
 }

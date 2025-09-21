@@ -1,22 +1,43 @@
-import axios from "axios";
-import type { Movie } from "../types/movie"
+import axios, { type AxiosResponse } from "axios";
+import type { TmdbSearchResponse } from "../types/movie";
 
-interface MovieRes {
-    results: Movie[]
+
+const token = import.meta.env.VITE_TMDB_TOKEN as string;
+if (!token) {
+  throw new Error("VITE_TMDB_TOKEN is missing. Put it in your .env");
 }
 
-const token = import.meta.env.VITE_TMDB_TOKEN;
- 
-export default async function fetchMovies(search: string): Promise<Movie[]> {
-    const getMovie = await axios.get<MovieRes>(`https://api.themoviedb.org/3/search/movie`, {
-        params: {
-            query: search,
-        },
-        headers: {
-            accept: 'application/json',
-            Authorization: `Bearer ${token}`,
-        }
-    });
+export const api = axios.create({
+  baseURL: "https://api.themoviedb.org/3",
+  headers: {
+    Authorization: `Bearer ${token}`, // v4 Bearer token
+    "Content-Type": "application/json;charset=utf-8",
+  },
+});
 
-    return getMovie.data.results;
-};
+/**
+ * Пошук фільмів за ключовим словом з пагінацією.
+ */
+export async function fetchMovies(
+  query: string,
+  page: number
+): Promise<TmdbSearchResponse> {
+  const resp: AxiosResponse<TmdbSearchResponse> = await api.get(
+    "/search/movie",
+    {
+      params: {
+        query,
+        page,
+        include_adult: false,
+      },
+    }
+  );
+  return resp.data;
+}
+
+/** Хелпер для побудови url зображення */
+export function buildImg(path: string | null | undefined, size: "w500" | "original" = "w500") {
+  if (!path) return "";
+  const base = "https://image.tmdb.org/t/p/";
+  return `${base}${size}${path}`;
+}
