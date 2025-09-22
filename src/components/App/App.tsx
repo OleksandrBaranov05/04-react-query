@@ -10,7 +10,8 @@ import ErrorMessage from "../ErrorMessage/ErrorMessage";
 import MovieModal from "../MovieModal/MovieModal";
 
 import { fetchMovies } from "../../services/movieService";
-import type { Movie, TmdbSearchResponse } from "../../types/movie";
+import type { Movie } from "../../types/movie";
+import type { TmdbSearchResponse } from "../../services/movieService";
 import css from "./App.module.css";
 
 export default function App() {
@@ -22,7 +23,7 @@ export default function App() {
     queryKey: ["movies", query, page],
     queryFn: () => fetchMovies(query, page),
     enabled: query.trim().length > 0,
-    placeholderData: keepPreviousData,
+    placeholderData: keepPreviousData
   });
 
   useEffect(() => {
@@ -50,15 +51,12 @@ export default function App() {
 
         {!isError && !isFetching && isSuccess && data?.results.length > 0 && (
           <>
-            {}
             {totalPages > 1 && (
               <ReactPaginate
                 pageCount={totalPages}
                 pageRangeDisplayed={5}
                 marginPagesDisplayed={1}
-                onPageChange={({ selected }) => {
-                  setPage(selected + 1);
-                }}
+                onPageChange={({ selected }) => setPage(selected + 1)}
                 forcePage={page - 1}
                 containerClassName={css.pagination}
                 activeClassName={css.active}
