@@ -1,39 +1,29 @@
-import axios, { type AxiosResponse } from "axios";
-import type { TmdbSearchResponse } from "../types/movie";
+import axios from "axios";
+import type { AxiosInstance } from "axios";
+import type { Movie } from "../types/movie";
 
-
-const token = import.meta.env.VITE_TMDB_TOKEN as string;
-if (!token) {
-  throw new Error("VITE_TMDB_TOKEN is missing. Put it in your .env");
-}
-
-export const api = axios.create({
+const api: AxiosInstance = axios.create({
   baseURL: "https://api.themoviedb.org/3",
   headers: {
-    Authorization: `Bearer ${token}`,
-    "Content-Type": "application/json;charset=utf-8",
-  },
+    accept: "application/json",
+    Authorization: `Bearer ${import.meta.env.VITE_TMDB_V4_TOKEN}`
+  }
 });
 
-export async function fetchMovies(
-  query: string,
-  page: number
-): Promise<TmdbSearchResponse> {
-  const resp: AxiosResponse<TmdbSearchResponse> = await api.get(
-    "/search/movie",
-    {
-      params: {
-        query,
-        page,
-        include_adult: false,
-      },
-    }
-  );
-  return resp.data;
+export interface TmdbSearchResponse {
+  page: number;
+  results: Movie[];
+  total_results: number;
+  total_pages: number;
 }
 
-export function buildImg(path: string | null | undefined, size: "w500" | "original" = "w500") {
-  if (!path) return "";
-  const base = "https://image.tmdb.org/t/p/";
-  return `${base}${size}${path}`;
+export async function fetchMovies(query: string, page: number): Promise<TmdbSearchResponse> {
+  const { data } = await api.get<TmdbSearchResponse>("/search/movie", {
+    params: { query, page, language: "uk-UA", include_adult: false }
+  });
+  return data;
+}
+
+export function buildImg(path: string | null, size: "w92"|"w154"|"w185"|"w342"|"w500"|"w780"|"original" = "w500"): string | null {
+  return path ? `https://image.tmdb.org/t/p/${size}${path}` : null;
 }
